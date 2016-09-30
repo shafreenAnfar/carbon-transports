@@ -58,7 +58,7 @@ public class NettyTransportServiceComponent implements RequiredCapabilityListene
     @Reference(
             name = "message-processor",
             service = CarbonMessageProcessor.class,
-            cardinality = ReferenceCardinality.OPTIONAL,
+            cardinality = ReferenceCardinality.MULTIPLE,
             policy = ReferencePolicy.DYNAMIC,
             unbind = "removeMessageProcessor")
     protected void addMessageProcessor(CarbonMessageProcessor carbonMessageProcessor) {

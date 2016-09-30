@@ -28,6 +28,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.carbon.messaging.CarbonCallback;
+import org.wso2.carbon.messaging.CarbonMessageProcessor;
 import org.wso2.carbon.messaging.Constants;
 import org.wso2.carbon.transport.http.netty.config.ListenerConfiguration;
 import org.wso2.carbon.transport.http.netty.internal.NettyTransportContextHolder;
@@ -121,11 +122,45 @@ public class WorkerPoolDispatchingSourceHandler extends SourceHandler {
         }
         if (continueRequest) {
             executorService.execute(() -> {
-                try {
-                    NettyTransportContextHolder.getInstance().getMessageProcessor().receive(cMsg, carbonCallback);
-                } catch (Exception e) {
-                    log.error("Error occurred inside the messaging engine", e);
-                }
+
+                NettyTransportContextHolder nettyTransportContextHolder = NettyTransportContextHolder.getInstance();
+                nettyTransportContextHolder.getListenerConfigurations()
+                        .forEach((k, v) -> v.getParameters()
+                                .forEach(p -> {
+                                    CarbonMessageProcessor cmp =
+                                            nettyTransportContextHolder.getMessageProcessor(p.getValue());
+                                    if (cmp != null) {
+                                        try {
+                                            cmp.receive(cMsg, carbonCallback);
+                                        } catch (Exception e) {
+                                            log.error("Error occurred inside the messaging engine", e);
+                                        }
+                                    }
+                                }));
+
+//                NettyTransportContextHolder.getInstance().getMessageProcessor().receive(cMsg, carbonCallback);
+
+//                try {
+//                    NettyTransportContextHolder nettyTransportContextHolder
+                // = NettyTransportContextHolder.getInstance();
+//                    nettyTransportContextHolder.getListenerConfigurations()
+//                            .forEach((k,v) -> v.getParameters()
+//                                    .forEach(p -> {
+//                                        CarbonMessageProcessor cmp =
+//                                            nettyTransportContextHolder.getMessageProcessor(p.getValue());
+//                                        if (cmp != null) {
+//                                            try {
+//                                                cmp.receive(cMsg, carbonCallback);
+//                                            } catch (Exception e) {
+//                                                log.error("Error occurred inside the messaging engine", e);
+//                                            }
+//                                        }
+//                                    }));
+//
+//                    NettyTransportContextHolder.getInstance().getMessageProcessor().receive(cMsg, carbonCallback);
+//                } catch (Exception e) {
+//                    log.error("Error occurred inside the messaging engine", e);
+//                }
             });
         }
     }

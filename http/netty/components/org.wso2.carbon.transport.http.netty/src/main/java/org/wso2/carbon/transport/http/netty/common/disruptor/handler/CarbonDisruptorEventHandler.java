@@ -17,6 +17,7 @@ package org.wso2.carbon.transport.http.netty.common.disruptor.handler;
 
 import org.wso2.carbon.messaging.CarbonCallback;
 import org.wso2.carbon.messaging.CarbonMessage;
+import org.wso2.carbon.messaging.CarbonMessageProcessor;
 import org.wso2.carbon.messaging.Constants;
 import org.wso2.carbon.transport.http.netty.common.disruptor.event.CarbonDisruptorEvent;
 import org.wso2.carbon.transport.http.netty.internal.NettyTransportContextHolder;
@@ -39,7 +40,23 @@ public class CarbonDisruptorEventHandler extends DisruptorEventHandler {
             // Mechanism to process each event from only one event handler
             if (lock.tryLock()) {
                 CarbonCallback carbonCallback = (CarbonCallback) carbonMessage.getProperty(Constants.CALL_BACK);
-                NettyTransportContextHolder.getInstance().getMessageProcessor().receive(carbonMessage, carbonCallback);
+//                NettyTransportContextHolder.getInstance()
+                // .getMessageProcessor().receive(carbonMessage, carbonCallback);
+                NettyTransportContextHolder nettyTransportContextHolder = NettyTransportContextHolder.getInstance();
+                nettyTransportContextHolder.getListenerConfigurations()
+                        .forEach((k, v) -> v.getParameters()
+                                .forEach(p -> {
+                                    CarbonMessageProcessor cmp =
+                                            nettyTransportContextHolder.getMessageProcessor(p.getValue());
+                                    if (cmp != null) {
+                                        try {
+                                            cmp.receive(carbonMessage, carbonCallback);
+                                        } catch (Exception e) {
+//                                            log.error("Error occurred inside the messaging engine", e);
+                                        }
+                                    }
+                                }));
+
                 // lock.unlock() does not used because if there are multiple event handlers and same event
                 // should not processed by multiple event handlers .If  unlock happens too early for a event before
                 // other Event handler object reads that event then there will be a probability of executing
@@ -60,7 +77,22 @@ public class CarbonDisruptorEventHandler extends DisruptorEventHandler {
             if (carbonMessage.getProperty(Constants.DIRECTION) == null) {
 
                 CarbonCallback carbonCallback = (CarbonCallback) carbonMessage.getProperty(Constants.CALL_BACK);
-                NettyTransportContextHolder.getInstance().getMessageProcessor().receive(carbonMessage, carbonCallback);
+//                NettyTransportContextHolder.getInstance()
+                // .getMessageProcessor().receive(carbonMessage, carbonCallback);
+                NettyTransportContextHolder nettyTransportContextHolder = NettyTransportContextHolder.getInstance();
+                nettyTransportContextHolder.getListenerConfigurations()
+                        .forEach((k, v) -> v.getParameters()
+                                .forEach(p -> {
+                                    CarbonMessageProcessor cmp =
+                                            nettyTransportContextHolder.getMessageProcessor(p.getValue());
+                                    if (cmp != null) {
+                                        try {
+                                            cmp.receive(carbonMessage, carbonCallback);
+                                        } catch (Exception e) {
+                                            //log.error("Error occurred inside the messaging engine", e);
+                                        }
+                                    }
+                                }));
 
 
             } else if (carbonMessage.getProperty(Constants.DIRECTION).equals(Constants.DIRECTION_RESPONSE)) {

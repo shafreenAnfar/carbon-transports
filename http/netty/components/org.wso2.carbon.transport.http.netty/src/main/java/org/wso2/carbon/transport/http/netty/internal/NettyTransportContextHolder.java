@@ -37,13 +37,17 @@ public class NettyTransportContextHolder {
 
     private static NettyTransportContextHolder instance = new NettyTransportContextHolder();
     private BundleContext bundleContext;
-    private CarbonMessageProcessor messageProcessor;
+    private Map<String, CarbonMessageProcessor> messageProcessor = new HashMap<>();
     private HandlerExecutor handlerExecutor;
     private Map<String, ListenerConfiguration> listenerConfigurations = new HashMap<>();
     private TransportListenerManager manager;
 
     public ListenerConfiguration getListenerConfiguration(String id) {
         return listenerConfigurations.get(id);
+    }
+
+    public Map<String, ListenerConfiguration> getListenerConfigurations() {
+        return listenerConfigurations;
     }
 
     public void setListenerConfiguration(String id, ListenerConfiguration config) {
@@ -67,17 +71,24 @@ public class NettyTransportContextHolder {
         return this.bundleContext;
     }
 
-    public CarbonMessageProcessor getMessageProcessor() {
-        return messageProcessor;
+    public CarbonMessageProcessor getMessageProcessor(String id) {
+        return messageProcessor.get(id);
     }
 
     public void setMessageProcessor(CarbonMessageProcessor carbonMessageProcessor) {
-        this.messageProcessor = carbonMessageProcessor;
+        this.messageProcessor.put(carbonMessageProcessor.getId(), carbonMessageProcessor);
     }
 
     public void removeMessageProcessor(CarbonMessageProcessor carbonMessageProcessor) {
-        if (carbonMessageProcessor.getId().equals(messageProcessor.getId())) {
-            messageProcessor = null;
+//        this.messageProcessor.forEach(cmp -> cmp.);
+//        if (carbonMessageProcessor.getId().equals(messageProcessor.getId())) {
+//            messageProcessor = null;
+//        }
+
+        for (Map.Entry<String, CarbonMessageProcessor> entry : messageProcessor.entrySet()) {
+            if (carbonMessageProcessor.getId().equals(entry.getValue().getId())) {
+                messageProcessor = null;
+            }
         }
     }
 
