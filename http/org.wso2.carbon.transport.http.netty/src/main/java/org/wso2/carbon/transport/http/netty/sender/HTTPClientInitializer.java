@@ -65,7 +65,7 @@ public class HTTPClientInitializer extends ChannelInitializer<SocketChannel> {
         ch.pipeline().addLast("chunkWriter", new ChunkedWriteHandler());
         int socketIdleTimeout = senderConfiguration.getSocketIdleTimeout(60000);
         ch.pipeline().addLast("idleStateHandler",
-                new IdleStateHandler(socketIdleTimeout, socketIdleTimeout, 0, TimeUnit.MILLISECONDS));
+                new IdleStateHandler(socketIdleTimeout, socketIdleTimeout, socketIdleTimeout, TimeUnit.MILLISECONDS));
         handler = new TargetHandler();
         ch.pipeline().addLast(HANDLER, handler);
     }

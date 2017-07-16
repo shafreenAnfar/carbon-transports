@@ -20,6 +20,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpRequest;
+import org.apache.commons.pool.ObjectPool;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +50,7 @@ public class ConnectionManager {
     private EventLoopGroup clientEventGroup;
     private PoolConfiguration poolConfiguration;
     private PoolManagementPolicy poolManagementPolicy;
-    private final Map<String, GenericObjectPool> connGlobalPool;
+    private final Map<String, ObjectPool> connGlobalPool;
     private AtomicInteger index = new AtomicInteger(1);
     private static volatile ConnectionManager connectionManager;
 
@@ -81,17 +82,8 @@ public class ConnectionManager {
 
     }
 
-    private GenericObjectPool createPoolForRoutePerSrcHndlr(GenericObjectPool genericObjectPool) {
-        GenericObjectPool.Config config = new GenericObjectPool.Config();
-        config.maxActive = poolConfiguration.getMaxActivePerPool();
-        config.maxIdle = poolConfiguration.getMaxIdlePerPool();
-        config.minIdle = poolConfiguration.getMinIdlePerPool();
-        config.testOnBorrow = poolConfiguration.isTestOnBorrow();
-        config.testWhileIdle = poolConfiguration.isTestWhileIdle();
-        config.timeBetweenEvictionRunsMillis = poolConfiguration.getTimeBetweenEvictionRuns();
-        config.minEvictableIdleTimeMillis = poolConfiguration.getMinEvictableIdleTime();
-        config.whenExhaustedAction = poolConfiguration.getExhaustedAction();
-        return new GenericObjectPool(new PoolableTargetChannelFactoryPerSrcHndlr(genericObjectPool), config);
+    private SimpleGenericObjectPool createPoolForRoutePerSrcHndlr(ObjectPool genericObjectPool) {
+        return new SimpleGenericObjectPool(new PoolableTargetChannelFactoryPerSrcHndlr(genericObjectPool));
     }
 
     public static ConnectionManager getInstance(Map<String, Object> transportProperties) {
@@ -128,7 +120,7 @@ public class ConnectionManager {
 
         // Take connections from Global connection pool
         try {
-            GenericObjectPool trgHlrConnPool;
+            ObjectPool trgHlrConnPool;
             TargetChannel targetChannel;
 
             if (sourceHandler != null) {
@@ -139,14 +131,14 @@ public class ConnectionManager {
 
                 if (poolManagementPolicy == PoolManagementPolicy.LOCK_DEFAULT_POOLING) {
                     // This is faster than the above one (about 2k difference)
-                    Map<String, GenericObjectPool> srcHlrConnPool = sourceHandler.getTargetChannelPool();
+                    Map<String, ObjectPool> srcHlrConnPool = sourceHandler.getTargetChannelPool();
                     trgHlrConnPool = srcHlrConnPool.get(httpRoute.toString());
                     if (trgHlrConnPool == null) {
                         trgHlrConnPool = createPoolForRoute(httpRoute, group, cl, senderConfiguration);
                         srcHlrConnPool.put(httpRoute.toString(), trgHlrConnPool);
                     }
                 } else {
-                    Map<String, GenericObjectPool> srcHlrConnPool = sourceHandler.getTargetChannelPool();
+                    Map<String, ObjectPool> srcHlrConnPool = sourceHandler.getTargetChannelPool();
                     trgHlrConnPool = srcHlrConnPool.get(httpRoute.toString());
                     if (trgHlrConnPool == null) {
                         synchronized (this) {
@@ -188,6 +180,9 @@ public class ConnectionManager {
                     targetChannel.setRequestWritten(true); // If request written
                 }
             }
+        } catch (RuntimeException runtimeException) {
+            log.error("A runtime exception occurred that cannot be dealt with ConnectionManager");
+            throw runtimeException;
         } catch (Exception e) {
             String msg = "Failed to send the request through the default pooling";
             log.error(msg, e);
@@ -215,11 +210,11 @@ public class ConnectionManager {
 
     //Add connection to Pool back
     public void returnChannel(TargetChannel targetChannel) throws Exception {
-        Map<String, GenericObjectPool> objectPoolMap = targetChannel.getCorrelatedSource().getTargetChannelPool();
+        Map<String, ObjectPool> objectPoolMap = targetChannel.getCorrelatedSource().getTargetChannelPool();
         releaseChannelToPool(targetChannel, objectPoolMap.get(targetChannel.getHttpRoute().toString()));
     }
 
-    private void releaseChannelToPool(TargetChannel targetChannel, GenericObjectPool pool) throws Exception {
+    private void releaseChannelToPool(TargetChannel targetChannel, ObjectPool pool) throws Exception {
         try {
             if (targetChannel.getChannel().isActive()) {
                 pool.returnObject(targetChannel);
@@ -230,7 +225,7 @@ public class ConnectionManager {
     }
 
     public void invalidateTargetChannel(TargetChannel targetChannel) throws Exception {
-        Map<String, GenericObjectPool> objectPoolMap = targetChannel.getCorrelatedSource().getTargetChannelPool();
+        Map<String, ObjectPool> objectPoolMap = targetChannel.getCorrelatedSource().getTargetChannelPool();
         try {
             // Need a null check because SourceHandler side could timeout before TargetHandler side.
             if (objectPoolMap.get(targetChannel.getHttpRoute().toString()) != null) {
@@ -246,7 +241,7 @@ public class ConnectionManager {
      *
      * @return Map contains pools for each route
      */
-    public Map<String, GenericObjectPool> getTargetChannelPool() {
+    public Map<String, ObjectPool> getTargetChannelPool() {
         return this.connGlobalPool;
     }
 

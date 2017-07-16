@@ -22,7 +22,6 @@ import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -143,11 +142,7 @@ public class TargetHandler extends ChannelInboundHandlerAdapter {
         this.targetChannel = targetChannel;
     }
 
-    // TODO: This cannot be done as long as we use apache pooling.
-    protected void readTimedOut(ChannelHandlerContext ctx) {
-
-        ctx.channel().close();
-
+    protected void readTimedOut() {
         if (targetChannel.isRequestWritten()) {
             String payload = "<errorMessage>" + "ReadTimeoutException occurred for endpoint " + targetChannel.
                     getHttpRoute().toString() + "</errorMessage>";
@@ -167,7 +162,6 @@ public class TargetHandler extends ChannelInboundHandlerAdapter {
                 LOG.error("Cannot correlate callback with request callback is null ");
             }
         }
-
     }
 
     protected CarbonMessage setUpCarbonMessage(ChannelHandlerContext ctx, Object msg) {
@@ -225,13 +219,8 @@ public class TargetHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent) {
-            IdleStateEvent event = (IdleStateEvent) evt;
-            if (event.state() == IdleState.READER_IDLE) {
-                ctx.close();
-            }
-            else if (event.state() == IdleState.WRITER_IDLE) {
-                ctx.close();
-            }
+            ctx.close(); // we may not close the connection here!
+            readTimedOut();
         }
     }
 }

@@ -37,7 +37,7 @@ import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.timeout.IdleStateEvent;
-import org.apache.commons.pool.impl.GenericObjectPool;
+import org.apache.commons.pool.ObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.carbon.messaging.CarbonCallback;
@@ -65,7 +65,7 @@ public class SourceHandler extends ChannelInboundHandlerAdapter {
     protected ChannelHandlerContext ctx;
     protected HTTPCarbonMessage cMsg;
     protected ConnectionManager connectionManager;
-    protected Map<String, GenericObjectPool> targetChannelPool = new ConcurrentHashMap<>();
+    protected Map<String, ObjectPool> targetChannelPool = new ConcurrentHashMap<>();
     protected ListenerConfiguration listenerConfiguration;
     private WebSocketServerHandshaker handshaker;
 
@@ -262,7 +262,7 @@ public class SourceHandler extends ChannelInboundHandlerAdapter {
         connectionManager.notifyChannelInactive();
     }
 
-    public Map<String, GenericObjectPool> getTargetChannelPool() {
+    public Map<String, ObjectPool> getTargetChannelPool() {
         return targetChannelPool;
     }
 

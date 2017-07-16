@@ -16,8 +16,8 @@
 package org.wso2.carbon.transport.http.netty.sender.channel.pool;
 
 
+import org.apache.commons.pool.ObjectPool;
 import org.apache.commons.pool.PoolableObjectFactory;
-import org.apache.commons.pool.impl.GenericObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.carbon.transport.http.netty.sender.channel.TargetChannel;
@@ -29,9 +29,9 @@ public class PoolableTargetChannelFactoryPerSrcHndlr implements PoolableObjectFa
 
     private static final Logger log = LoggerFactory.getLogger(PoolableTargetChannelFactoryPerSrcHndlr.class);
 
-    private final GenericObjectPool genericObjectPool;
+    private final ObjectPool genericObjectPool;
 
-    public PoolableTargetChannelFactoryPerSrcHndlr(GenericObjectPool genericObjectPool) {
+    public PoolableTargetChannelFactoryPerSrcHndlr(ObjectPool genericObjectPool) {
         this.genericObjectPool = genericObjectPool;
     }
 
