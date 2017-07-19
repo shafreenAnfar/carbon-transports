@@ -57,7 +57,7 @@ public class ConnectorManager {
         }
     }
 
-    private void registerClientConnector(ClientConnector clientConnector) {
+    public void registerClientConnector(ClientConnector clientConnector) {
         clientConnectors.put(clientConnector.getProtocol(), clientConnector);
     }
 
