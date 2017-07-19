@@ -232,10 +232,7 @@ public class ConnectionManager {
     public void invalidateTargetChannel(TargetChannel targetChannel) throws Exception {
         Map<String, GenericObjectPool> objectPoolMap = targetChannel.getCorrelatedSource().getTargetChannelPool();
         try {
-            // Need a null check because SourceHandler side could timeout before TargetHandler side.
-            if (objectPoolMap.get(targetChannel.getHttpRoute().toString()) != null) {
-                objectPoolMap.get(targetChannel.getHttpRoute().toString()).invalidateObject(targetChannel);
-            }
+            objectPoolMap.get(targetChannel.getHttpRoute().toString()).invalidateObject(targetChannel);
         } catch (Exception e) {
             throw new Exception("Cannot invalidate channel from pool", e);
         }

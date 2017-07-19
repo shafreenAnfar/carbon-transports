@@ -42,7 +42,6 @@ import org.wso2.carbon.transport.http.netty.sender.channel.pool.ConnectionManage
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A class that responsible for create server side channels.
@@ -182,10 +181,10 @@ public class HTTPServerChannelInitializer extends ChannelInitializer<SocketChann
         p.addLast("compressor", new HttpContentCompressor());
         p.addLast("chunkWriter", new ChunkedWriteHandler());
         try {
-            int socketIdleTimeout = listenerConfiguration.getSocketIdleTimeout(60000);
+            int socketIdleTimeout = listenerConfiguration.getSocketIdleTimeout(60);
+            // TODO: Let's improve this later for read and write timeouts
             p.addLast("idleStateHandler",
-                    new IdleStateHandler(socketIdleTimeout, socketIdleTimeout, socketIdleTimeout,
-                            TimeUnit.MILLISECONDS));
+                    new IdleStateHandler(socketIdleTimeout, socketIdleTimeout, socketIdleTimeout));
             p.addLast("handler", new SourceHandler(connectionManager, listenerConfiguration));
         } catch (Exception e) {
             log.error("Cannot Create SourceHandler ", e);
