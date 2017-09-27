@@ -59,28 +59,32 @@ public class HttpResponseListener implements HttpConnectorListener {
 
         sourceContext.write(response);
 
-        while (true) {
-            if (httpMessage.isEndOfMsgAdded() && httpMessage.isEmpty()) {
-                ChannelFuture future = sourceContext.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
-                if (connectionCloseAfterResponse) {
-                    future.addListener(ChannelFutureListener.CLOSE);
+        if (httpMessage.getFullMessageLength() == -1) {
+            httpMessage.setTargetCtx(sourceContext.channel());
+        } else {
+            while (true) {
+                if (httpMessage.isEndOfMsgAdded() && httpMessage.isEmpty()) {
+                    ChannelFuture future = sourceContext.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+                    if (connectionCloseAfterResponse) {
+                        future.addListener(ChannelFutureListener.CLOSE);
+                    }
+                    break;
                 }
-                break;
-            }
-            HttpContent httpContent = httpMessage.getHttpContent();
-            if (httpContent instanceof LastHttpContent) {
-                ChannelFuture future = sourceContext.writeAndFlush(httpContent);
-                if (connectionCloseAfterResponse) {
-                    future.addListener(ChannelFutureListener.CLOSE);
+                HttpContent httpContent = httpMessage.getHttpContent();
+                if (httpContent instanceof LastHttpContent) {
+                    ChannelFuture future = sourceContext.writeAndFlush(httpContent);
+                    if (connectionCloseAfterResponse) {
+                        future.addListener(ChannelFutureListener.CLOSE);
+                    }
+                    //                    TODO: Revisit this once the refactor is completed
+                    //                    if (HTTPTransportContextHolder.getInstance().getHandlerExecutor() != null) {
+                    //                        HTTPTransportContextHolder.getInstance().getHandlerExecutor().
+                    //                                executeAtSourceResponseSending(httpMessage);
+                    //                    }
+                    break;
                 }
-//      TODO: Revisit this once the refactor is completed
-//                    if (HTTPTransportContextHolder.getInstance().getHandlerExecutor() != null) {
-//                        HTTPTransportContextHolder.getInstance().getHandlerExecutor().
-//                                executeAtSourceResponseSending(httpMessage);
-//                    }
-                break;
+                sourceContext.write(httpContent);
             }
-            sourceContext.write(httpContent);
         }
     }
 

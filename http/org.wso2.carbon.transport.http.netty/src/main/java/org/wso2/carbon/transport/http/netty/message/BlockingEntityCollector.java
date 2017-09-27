@@ -20,6 +20,8 @@ package org.wso2.carbon.transport.http.netty.message;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -184,5 +186,10 @@ public class BlockingEntityCollector implements EntityCollector {
 
     public void setAlreadyRead(boolean alreadyRead) {
         this.alreadyRead.set(alreadyRead);
+    }
+
+    @Override
+    public void setTargetCtx(Channel targetCtx) {
+
     }
 }

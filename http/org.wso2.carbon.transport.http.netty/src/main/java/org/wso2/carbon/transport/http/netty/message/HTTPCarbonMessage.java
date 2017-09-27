@@ -18,6 +18,8 @@
 
 package org.wso2.carbon.transport.http.netty.message;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +66,8 @@ public class HTTPCarbonMessage {
                 soTimeOut = serverBootstrapConfiguration.getSoTimeOut();
             }
         }
-        setBlockingEntityCollector(new BlockingEntityCollector(soTimeOut));
+//        setBlockingEntityCollector(new BlockingEntityCollector(soTimeOut));
+        setBlockingEntityCollector(new EntityCollectorImpl());
     }
 
     public void addHttpContent(HttpContent httpContent) {
@@ -251,7 +254,11 @@ public class HTTPCarbonMessage {
         this.messagingException = messagingException;
     }
 
-    public void setBlockingEntityCollector(BlockingEntityCollector blockingEntityCollector) {
+    public void setBlockingEntityCollector(EntityCollector blockingEntityCollector) {
         this.blockingEntityCollector = blockingEntityCollector;
+    }
+
+    public void setTargetCtx(Channel channel) {
+        this.blockingEntityCollector.setTargetCtx(channel);
     }
 }

@@ -18,6 +18,8 @@
 
 package org.wso2.carbon.transport.http.netty.message;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpContent;
 
 import java.nio.ByteBuffer;
@@ -103,4 +105,6 @@ public interface EntityCollector {
      * @param alreadyRead indicated using true or false
      */
     void setAlreadyRead(boolean alreadyRead);
+
+    void setTargetCtx(Channel channel);
 }

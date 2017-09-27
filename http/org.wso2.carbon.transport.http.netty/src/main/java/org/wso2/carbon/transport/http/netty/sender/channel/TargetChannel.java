@@ -155,21 +155,27 @@ public class TargetChannel {
             this.setRequestWritten(true);
             this.getChannel().write(httpRequest);
 
-            while (true) {
-                if (httpCarbonRequest.isEndOfMsgAdded() && httpCarbonRequest.isEmpty()) {
-                    this.getChannel().writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
-                    break;
-                } else {
-                    HttpContent httpContent = httpCarbonRequest.getHttpContent();
-                    if (httpContent instanceof LastHttpContent) {
-                        this.getChannel().writeAndFlush(httpContent);
-//                    if (HTTPTransportContextHolder.getInstance().getHandlerExecutor() != null) {
-//                        HTTPTransportContextHolder.getInstance().getHandlerExecutor().
-//                                executeAtTargetRequestSending(httpCarbonRequest);
-//                    }
+            if (httpCarbonRequest.getFullMessageLength() == -1) {
+                httpCarbonRequest.setTargetCtx(getChannel());
+            } else {
+                while (true) {
+                    if (httpCarbonRequest.isEndOfMsgAdded() && httpCarbonRequest.isEmpty()) {
+                        this.getChannel().writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
                         break;
                     } else {
-                        this.getChannel().write(httpContent);
+                        HttpContent httpContent = httpCarbonRequest.getHttpContent();
+                        if (httpContent != null) {
+                            if (httpContent instanceof LastHttpContent) {
+                                this.getChannel().writeAndFlush(httpContent);
+                                //                    if (HTTPTransportContextHolder.getInstance().getHandlerExecutor() != null) {
+                                //                        HTTPTransportContextHolder.getInstance().getHandlerExecutor().
+                                //                                executeAtTargetRequestSending(httpCarbonRequest);
+                                //                    }
+                                break;
+                            } else {
+                                this.getChannel().write(httpContent);
+                            }
+                        }
                     }
                 }
             }
